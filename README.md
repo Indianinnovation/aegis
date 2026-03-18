@@ -151,7 +151,7 @@ docker compose down                   # Stop everything
 
 ## Author
 
-Built by Dilip R Tandekar — AI Platform Engineer
+Built by Dilip R Tandekar — AI Solution Architect 
 - GitHub: https://github.com/Indianinnovation
 - LinkedIn: https://linkedin.com/in/dilip-tandekar-00419a6
 
