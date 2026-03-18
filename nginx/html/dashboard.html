@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Aegis — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Fraunces:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:      #07090f;
+  --bg2:     #0c1018;
+  --bg3:     #111822;
+  --border:  #1a2535;
+  --border2: #223040;
+  --teal:    #00d4aa;
+  --teal2:   #00a884;
+  --blue:    #0099ff;
+  --gold:    #f0c040;
+  --red:     #ff5555;
+  --text:    #c8d8e8;
+  --text2:   #7a9bb5;
+  --text3:   #3d5a73;
+  --mono:    'JetBrains Mono', monospace;
+  --serif:   'Fraunces', Georgia, serif;
+  --sans:    'DM Sans', sans-serif;
+  --glow:    rgba(0,212,170,.15);
+}
+html, body { height: 100%; overflow: hidden; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); display: flex; flex-direction: column; }
+
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)} }
+@keyframes fade-up { from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)} }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:0} }
+@keyframes spin { to{transform:rotate(360deg)} }
+@keyframes slide-in { from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)} }
+
+/* ── Top bar ─────────────────────────────────────────────── */
+.topbar {
+  height: 52px; background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 20px; gap: 14px; flex-shrink: 0;
+}
+.logo {
+  width: 30px; height: 30px; flex-shrink: 0;
+  clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+  background: linear-gradient(135deg, var(--teal), var(--blue));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif); font-weight: 900; font-size: 13px; color: #000;
+  box-shadow: 0 0 16px var(--glow);
+}
+.logo-name { font-family: var(--serif); font-weight: 900; font-size: 18px; letter-spacing: 2px; background: linear-gradient(90deg, var(--text), var(--teal)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.topbar-sep { width: 1px; height: 22px; background: var(--border); }
+.status-pill { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; background: rgba(0,212,170,.08); border: 1px solid rgba(0,212,170,.2); }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 6px var(--teal); animation: pulse 2s infinite; }
+.status-text { font-family: var(--mono); font-size: 10px; color: var(--teal); letter-spacing: 1px; text-transform: uppercase; }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+.model-badge { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: .5px; }
+.nav-tabs { display: flex; gap: 2px; }
+.nav-tab { padding: 6px 14px; border-radius: 5px; border: none; background: transparent; color: var(--text2); font-family: var(--mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all .2s; }
+.nav-tab:hover { color: var(--text); background: var(--bg3); }
+.nav-tab.active { background: rgba(0,212,170,.1); color: var(--teal); border: 1px solid rgba(0,212,170,.2); }
+
+/* ── Main layout ─────────────────────────────────────────── */
+.main { flex: 1; display: flex; overflow: hidden; }
+
+/* ── Panels ──────────────────────────────────────────────── */
+.panel { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.panel.active { display: flex; animation: fade-up .3s ease; }
+
+/* ── Chat panel ──────────────────────────────────────────── */
+.chat-layout { display: flex; flex: 1; overflow: hidden; }
+
+.chat-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; border-right: 1px solid var(--border); }
+
+.chat-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.chat-header h2 { font-family: var(--serif); font-weight: 700; font-size: 16px; }
+.session-id { font-family: var(--mono); font-size: 10px; color: var(--text3); }
+
+.messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+
+.msg { display: flex; flex-direction: column; animation: slide-in .25s ease; }
+.msg.user { align-items: flex-end; }
+.msg.agent { align-items: flex-start; }
+
+.msg-bubble {
+  max-width: 72%; padding: 11px 15px;
+  font-size: 13.5px; line-height: 1.6;
+}
+.msg.user .msg-bubble {
+  background: linear-gradient(135deg, rgba(0,153,255,.18), rgba(0,212,170,.12));
+  border: 1px solid rgba(0,212,170,.25);
+  border-radius: 14px 14px 3px 14px;
+}
+.msg.agent .msg-bubble {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 3px 14px 14px 14px;
+}
+.msg-meta { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 4px; padding: 0 4px; }
+
+.typing-bubble { display: flex; align-items: center; gap: 5px; padding: 12px 16px; background: var(--bg3); border: 1px solid var(--border); border-radius: 3px 14px 14px 14px; width: fit-content; }
+.typing-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); animation: pulse 1.2s infinite; }
+.typing-dot:nth-child(2) { animation-delay: .2s; }
+.typing-dot:nth-child(3) { animation-delay: .4s; }
+
+.chat-input-area { padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; flex-shrink: 0; }
+.chat-input {
+  flex: 1; padding: 11px 16px;
+  background: var(--bg3); border: 1px solid var(--border2);
+  border-radius: 8px; color: var(--text);
+  font-family: var(--sans); font-size: 13.5px;
+  outline: none; resize: none; min-height: 44px; max-height: 120px;
+  transition: border-color .2s;
+}
+.chat-input:focus { border-color: rgba(0,212,170,.4); }
+.chat-input::placeholder { color: var(--text3); }
+.send-btn {
+  width: 44px; height: 44px; border-radius: 8px; border: none;
+  background: var(--teal); color: #000; font-size: 16px;
+  cursor: pointer; transition: all .2s; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+.send-btn:hover { background: var(--teal2); transform: translateY(-1px); }
+.send-btn:disabled { background: var(--bg3); color: var(--text3); cursor: default; transform: none; }
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+.chat-sidebar { width: 280px; display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; }
+.sidebar-section { border-bottom: 1px solid var(--border); }
+.sidebar-title { padding: 12px 16px; font-family: var(--mono); font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--text3); display: flex; align-items: center; gap: 8px; }
+.sidebar-title button { margin-left: auto; padding: 2px 8px; border-radius: 3px; border: 1px solid var(--border); background: transparent; color: var(--text3); font-family: var(--mono); font-size: 9px; cursor: pointer; transition: all .2s; }
+.sidebar-title button:hover { color: var(--teal); border-color: var(--teal); }
+.sidebar-content { padding: 8px 12px; max-height: 200px; overflow-y: auto; }
+
+.quick-btn { width: 100%; text-align: left; padding: 8px 10px; border-radius: 5px; border: 1px solid var(--border); background: transparent; color: var(--text2); font-family: var(--sans); font-size: 12px; cursor: pointer; transition: all .2s; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+.quick-btn:hover { background: rgba(0,212,170,.06); border-color: rgba(0,212,170,.3); color: var(--teal); }
+.quick-icon { font-size: 13px; flex-shrink: 0; }
+
+.memory-item { padding: 7px 8px; border-radius: 4px; border: 1px solid var(--border); margin-bottom: 4px; font-size: 11px; color: var(--text2); line-height: 1.5; background: var(--bg3); }
+.no-data { font-family: var(--mono); font-size: 10px; color: var(--text3); padding: 8px; text-align: center; }
+
+/* ── Audit panel ─────────────────────────────────────────── */
+.audit-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 24px; }
+.panel-header { margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; }
+.panel-header h2 { font-family: var(--serif); font-weight: 700; font-size: 22px; }
+.panel-sub { font-size: 13px; color: var(--text2); margin-top: 4px; }
+.refresh-btn { padding: 7px 16px; border-radius: 5px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); font-family: var(--mono); font-size: 10px; cursor: pointer; letter-spacing: 1px; transition: all .2s; }
+.refresh-btn:hover { border-color: var(--teal); color: var(--teal); }
+
+.audit-table { flex: 1; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; }
+.audit-thead { display: grid; grid-template-columns: 90px 1fr 90px 80px 70px; padding: 10px 16px; background: var(--bg3); border-bottom: 1px solid var(--border); position: sticky; top: 0; }
+.audit-th { font-family: var(--mono); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+.audit-row { display: grid; grid-template-columns: 90px 1fr 90px 80px 70px; padding: 11px 16px; border-bottom: 1px solid rgba(26,37,53,.5); transition: background .15s; }
+.audit-row:hover { background: rgba(0,212,170,.03); }
+.audit-row:last-child { border-bottom: none; }
+.audit-cell { font-family: var(--mono); font-size: 11px; color: var(--text2); display: flex; align-items: center; }
+.audit-cell.tool { color: var(--text); }
+
+.badge { display: inline-flex; padding: 2px 7px; border-radius: 3px; font-family: var(--mono); font-size: 9px; letter-spacing: .8px; text-transform: uppercase; }
+.badge.approved { background: rgba(0,212,170,.1); color: var(--teal); border: 1px solid rgba(0,212,170,.25); }
+.badge.blocked  { background: rgba(255,85,85,.1);  color: var(--red);  border: 1px solid rgba(255,85,85,.25); }
+.badge.success  { background: rgba(0,212,170,.1); color: var(--teal); border: 1px solid rgba(0,212,170,.25); }
+.badge.error    { background: rgba(255,85,85,.1);  color: var(--red);  border: 1px solid rgba(255,85,85,.25); }
+
+/* ── Memory panel ────────────────────────────────────────── */
+.memory-panel-inner { flex: 1; overflow-y: auto; }
+.memory-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 7px; padding: 14px 16px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 12px; transition: border-color .2s; }
+.memory-card:hover { border-color: rgba(0,212,170,.25); }
+.memory-icon { width: 30px; height: 30px; border-radius: 6px; background: rgba(0,212,170,.08); border: 1px solid rgba(0,212,170,.2); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+.memory-text { flex: 1; font-size: 13px; line-height: 1.6; color: var(--text); }
+.memory-del { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 14px; padding: 2px 6px; border-radius: 4px; transition: all .2s; }
+.memory-del:hover { color: var(--red); background: rgba(255,85,85,.08); }
+.purge-btn { padding: 8px 18px; border-radius: 5px; border: 1px solid rgba(255,85,85,.3); background: rgba(255,85,85,.07); color: var(--red); font-family: var(--mono); font-size: 11px; cursor: pointer; transition: all .2s; }
+.purge-btn:hover { background: rgba(255,85,85,.15); }
+
+/* ── Spinner ─────────────────────────────────────────────── */
+.spinner { width: 16px; height: 16px; border: 2px solid var(--border); border-top-color: var(--teal); border-radius: 50%; animation: spin .7s linear infinite; }
+
+/* ── Toast ───────────────────────────────────────────────── */
+.toast { position: fixed; bottom: 24px; right: 24px; padding: 10px 18px; background: var(--bg3); border: 1px solid var(--teal); border-radius: 6px; font-family: var(--mono); font-size: 12px; color: var(--teal); z-index: 999; animation: fade-up .3s ease; }
+</style>
+</head>
+<body>
+
+<!-- ── Top bar ─────────────────────────────────────────── -->
+<div class="topbar">
+  <div class="logo">Æ</div>
+  <span class="logo-name">AEGIS</span>
+  <div class="topbar-sep"></div>
+  <div class="status-pill">
+    <div class="status-dot" id="statusDot"></div>
+    <span class="status-text" id="statusText">connecting...</span>
+  </div>
+  <div class="topbar-sep"></div>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('chat')">◈ Chat</button>
+    <button class="nav-tab" onclick="switchTab('audit')">▣ Audit Log</button>
+    <button class="nav-tab" onclick="switchTab('memory')">▤ Memory</button>
+  </nav>
+  <div class="topbar-right">
+    <span class="model-badge" id="modelBadge">claude-sonnet-4-5</span>
+  </div>
+</div>
+
+<!-- ── Main ───────────────────────────────────────────── -->
+<div class="main">
+
+  <!-- CHAT PANEL -->
+  <div class="panel active" id="panel-chat">
+    <div class="chat-layout">
+
+      <!-- Messages -->
+      <div class="chat-main">
+        <div class="chat-header">
+          <div>
+            <h2>Dilip's Aegis Assistant</h2>
+            <div class="session-id" id="sessionIdDisplay">session: initializing...</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-family:var(--mono);font-size:10px;color:var(--text3)">SECURE · LOCAL · PRIVATE</span>
+          </div>
+        </div>
+
+        <div class="messages" id="messages">
+          <div class="msg agent">
+            <div class="msg-bubble">
+              Hello Dilip! I'm your Aegis Assistant running securely on your laptop. I can search the web, remember things for you, and tell you the time. What would you like help with?
+            </div>
+            <div class="msg-meta">⬡ aegis · ready</div>
+          </div>
+        </div>
+
+        <div class="chat-input-area">
+          <textarea
+            class="chat-input"
+            id="chatInput"
+            placeholder="Message your agent... (Enter to send, Shift+Enter for new line)"
+            rows="1"
+          ></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendMessage()">➤</button>
+        </div>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="chat-sidebar">
+
+        <!-- Quick actions -->
+        <div class="sidebar-section">
+          <div class="sidebar-title">Quick Actions</div>
+          <div class="sidebar-content">
+            <button class="quick-btn" onclick="quickSend('What time is it right now?')">
+              <span class="quick-icon">◷</span> Current time
+            </button>
+            <button class="quick-btn" onclick="quickSend('Search the web for latest AI agent news today')">
+              <span class="quick-icon">⊕</span> AI news today
+            </button>
+            <button class="quick-btn" onclick="quickSend('What do you remember about me?')">
+              <span class="quick-icon">▤</span> My memories
+            </button>
+            <button class="quick-btn" onclick="quickSend('What skills do you have?')">
+              <span class="quick-icon">◈</span> Your skills
+            </button>
+            <button class="quick-btn" onclick="quickSend('Search the web for current weather in Herndon Virginia')">
+              <span class="quick-icon">◑</span> Herndon weather
+            </button>
+            <button class="quick-btn" onclick="quickSend('Search for latest 5G and O-RAN news')">
+              <span class="quick-icon">◎</span> 5G/O-RAN news
+            </button>
+          </div>
+        </div>
+
+        <!-- Recent memories -->
+        <div class="sidebar-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+          <div class="sidebar-title">
+            Recent Memory
+            <button onclick="loadSidebarMemories()">↻ refresh</button>
+          </div>
+          <div class="sidebar-content" id="sidebarMemories" style="flex:1;">
+            <div class="no-data">Loading...</div>
+          </div>
+        </div>
+
+        <!-- System status -->
+        <div class="sidebar-section">
+          <div class="sidebar-title">System</div>
+          <div class="sidebar-content">
+            <div style="display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;">
+                <span style="color:var(--text3)">Agent</span>
+                <span id="sysAgent" style="color:var(--teal)">checking...</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;">
+                <span style="color:var(--text3)">API Key</span>
+                <span id="sysKey" style="color:var(--text3)">...</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;">
+                <span style="color:var(--text3)">Messages</span>
+                <span id="sysMsgs" style="color:var(--text2)">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- AUDIT PANEL -->
+  <div class="panel" id="panel-audit">
+    <div class="audit-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Audit Log</h2>
+          <div class="panel-sub" id="auditSub">Loading entries...</div>
+        </div>
+        <button class="refresh-btn" onclick="loadAudit()">↻ REFRESH</button>
+      </div>
+      <div class="audit-table">
+        <div class="audit-thead">
+          <span class="audit-th">Time</span>
+          <span class="audit-th">Tool</span>
+          <span class="audit-th">Channel</span>
+          <span class="audit-th">Decision</span>
+          <span class="audit-th">Status</span>
+        </div>
+        <div id="auditBody">
+          <div style="padding:40px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--text3)">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MEMORY PANEL -->
+  <div class="panel" id="panel-memory">
+    <div class="audit-panel">
+      <div class="panel-header">
+        <div>
+          <h2>Memory Store</h2>
+          <div class="panel-sub" id="memorySub">AES-256 encrypted · per-user keys</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="refresh-btn" onclick="loadMemory()">↻ REFRESH</button>
+          <button class="purge-btn" onclick="purgeMemory()">✕ PURGE ALL</button>
+        </div>
+      </div>
+      <div class="memory-panel-inner" id="memoryBody">
+        <div style="padding:40px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--text3)">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── Config ────────────────────────────────────────────────
+const API = 'http://localhost';
+const SESSION_ID = crypto.randomUUID();
+let msgCount = 0;
+let isTyping = false;
+
+// ── Init ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('sessionIdDisplay').textContent = `session: ${SESSION_ID.slice(0,8)}...`;
+  document.getElementById('chatInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+  await checkHealth();
+  await loadSidebarMemories();
+});
+
+// ── Health check ──────────────────────────────────────────
+async function checkHealth() {
+  try {
+    const r = await fetch(`${API}/health`);
+    const d = await r.json();
+    if (d.status === 'ok') {
+      document.getElementById('statusDot').style.background = 'var(--teal)';
+      document.getElementById('statusText').textContent = 'online';
+      document.getElementById('modelBadge').textContent = d.model || 'claude-sonnet-4-5';
+      document.getElementById('sysAgent').textContent = d.agent || 'Aegis';
+      const keyEl = document.getElementById('sysKey');
+      keyEl.textContent = d.api_key === 'loaded' ? 'loaded' : 'MISSING';
+      keyEl.style.color = d.api_key === 'loaded' ? 'var(--teal)' : 'var(--red)';
+    }
+  } catch {
+    document.getElementById('statusDot').style.background = 'var(--red)';
+    document.getElementById('statusText').textContent = 'offline';
+    document.getElementById('sysAgent').textContent = 'unreachable';
+    document.getElementById('sysAgent').style.color = 'var(--red)';
+  }
+}
+
+// ── Tab switching ─────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(`panel-${tab}`).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'audit')  loadAudit();
+  if (tab === 'memory') loadMemory();
+}
+
+// ── Send message ──────────────────────────────────────────
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg || isTyping) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  addMessage('user', msg);
+  msgCount++;
+  document.getElementById('sysMsgs').textContent = msgCount;
+
+  showTyping();
+  isTyping = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  try {
+    const r = await fetch(`${API}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg, session_id: SESSION_ID, user_id: 'dilip' })
+    });
+    const d = await r.json();
+    hideTyping();
+    if (d.reply) {
+      addMessage('agent', d.reply);
+      msgCount++;
+      document.getElementById('sysMsgs').textContent = msgCount;
+      await loadSidebarMemories();
+    } else {
+      addMessage('agent', `Error: ${d.detail || 'Unknown error'}`);
+    }
+  } catch (e) {
+    hideTyping();
+    addMessage('agent', `Connection error: ${e.message}. Is the agent running at ${API}?`);
+  } finally {
+    isTyping = false;
+    document.getElementById('sendBtn').disabled = false;
+    input.focus();
+  }
+}
+
+function quickSend(msg) {
+  document.getElementById('chatInput').value = msg;
+  sendMessage();
+}
+
+// ── Message rendering ─────────────────────────────────────
+function addMessage(role, text) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+
+  const time = new Date().toLocaleTimeString('en', { hour:'2-digit', minute:'2-digit' });
+  const formatted = text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, `<code style="font-family:var(--mono);background:var(--bg);padding:1px 5px;border-radius:3px;font-size:12px;color:var(--teal)">$1</code>`)
+    .replace(/\n/g, '<br>');
+
+  div.innerHTML = `
+    <div class="msg-bubble">${formatted}</div>
+    <div class="msg-meta">${role === 'agent' ? '⬡ aegis' : 'you'} · ${time}</div>
+  `;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg agent'; div.id = 'typingIndicator';
+  div.innerHTML = `<div class="typing-bubble"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function hideTyping() {
+  const t = document.getElementById('typingIndicator');
+  if (t) t.remove();
+}
+
+// ── Audit log ─────────────────────────────────────────────
+async function loadAudit() {
+  document.getElementById('auditBody').innerHTML = `<div style="padding:30px;text-align:center;"><div class="spinner" style="margin:0 auto"></div></div>`;
+  try {
+    const r = await fetch(`${API}/audit?limit=50`);
+    const d = await r.json();
+    const entries = d.entries || [];
+    document.getElementById('auditSub').textContent = `${entries.length} entries · tamper-evident JSONL`;
+
+    if (!entries.length) {
+      document.getElementById('auditBody').innerHTML = `<div style="padding:40px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--text3)">No audit entries yet</div>`;
+      return;
+    }
+
+    document.getElementById('auditBody').innerHTML = entries.map(e => {
+      const t = new Date(e.ts).toLocaleTimeString('en', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+      return `<div class="audit-row">
+        <div class="audit-cell">${t}</div>
+        <div class="audit-cell tool">${e.tool}</div>
+        <div class="audit-cell">${e.channel}</div>
+        <div class="audit-cell"><span class="badge ${e.decision}">${e.decision}</span></div>
+        <div class="audit-cell"><span class="badge ${e.status}">${e.status}</span></div>
+      </div>`;
+    }).join('');
+  } catch {
+    document.getElementById('auditBody').innerHTML = `<div style="padding:40px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--red)">Failed to load audit log</div>`;
+  }
+}
+
+// ── Memory ────────────────────────────────────────────────
+async function loadMemory() {
+  document.getElementById('memoryBody').innerHTML = `<div style="padding:30px;text-align:center;"><div class="spinner" style="margin:0 auto"></div></div>`;
+  try {
+    const r = await fetch(`${API}/memories?user_id=dilip`);
+    const d = await r.json();
+    const mems = d.memories || [];
+    document.getElementById('memorySub').textContent = `${mems.length} encrypted memories · AES-256`;
+
+    if (!mems.length) {
+      document.getElementById('memoryBody').innerHTML = `<div style="padding:40px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--text3)">No memories stored yet. Chat with the agent to create memories.</div>`;
+      return;
+    }
+
+    document.getElementById('memoryBody').innerHTML = mems.map((m, i) => `
+      <div class="memory-card" id="mem-${i}">
+        <div class="memory-icon">▤</div>
+        <div class="memory-text">${m}</div>
+      </div>
+    `).join('');
+  } catch {
+    document.getElementById('memoryBody').innerHTML = `<div style="padding:40px;text-align:center;font-family:var(--mono);font-size:12px;color:var(--red)">Failed to load memories</div>`;
+  }
+}
+
+async function loadSidebarMemories() {
+  try {
+    const r = await fetch(`${API}/memories?user_id=dilip`);
+    const d = await r.json();
+    const mems = (d.memories || []).slice(0, 5);
+    const el = document.getElementById('sidebarMemories');
+    if (!mems.length) {
+      el.innerHTML = `<div class="no-data">No memories yet</div>`;
+    } else {
+      el.innerHTML = mems.map(m => `<div class="memory-item">${m.slice(0, 80)}${m.length > 80 ? '...' : ''}</div>`).join('');
+    }
+  } catch {
+    document.getElementById('sidebarMemories').innerHTML = `<div class="no-data">Unavailable</div>`;
+  }
+}
+
+async function purgeMemory() {
+  if (!confirm('Purge ALL memories? This cannot be undone.')) return;
+  try {
+    await fetch(`${API}/memories?user_id=dilip`, { method: 'DELETE' });
+    showToast('All memories purged');
+    loadMemory();
+    loadSidebarMemories();
+  } catch {
+    showToast('Failed to purge memories');
+  }
+}
+
+// ── Toast ─────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ── Auto-resize textarea ───────────────────────────────────
+document.addEventListener('input', e => {
+  if (e.target.classList.contains('chat-input')) {
+    e.target.style.height = 'auto';
+    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+  }
+});
+</script>
+</body>
+</html>

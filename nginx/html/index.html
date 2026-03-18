@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Aegis — The AI Agent Your Security Team Won't Hate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  /* ── Reset & Root ─────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --night:    #050810;
+    --ink:      #090e18;
+    --navy:     #0d1526;
+    --steel:    #132038;
+    --wire:     #1c2f4a;
+    --mist:     #2a4060;
+    --teal:     #00d4aa;
+    --teal2:    #00b894;
+    --ice:      #e8f4ff;
+    --silver:   #8cafc8;
+    --dim:      #3d5a73;
+    --gold:     #c8a84b;
+    --danger:   #e05555;
+    --glow-t:   rgba(0,212,170,.18);
+    --glow-s:   rgba(0,153,255,.12);
+    --r:        'Playfair Display', Georgia, serif;
+    --m:        'IBM Plex Mono', monospace;
+    --s:        'Outfit', sans-serif;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--night);
+    color: var(--ice);
+    font-family: var(--s);
+    overflow-x: hidden;
+    cursor: crosshair;
+  }
+
+  a { text-decoration: none; color: inherit; }
+
+  /* ── Scrollbar ────────────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: var(--ink); }
+  ::-webkit-scrollbar-thumb { background: var(--teal); border-radius: 2px; }
+
+  /* ── Animations ───────────────────────────────────────────────── */
+  @keyframes float {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    33%      { transform: translateY(-14px) rotate(.8deg); }
+    66%      { transform: translateY(-6px) rotate(-.5deg); }
+  }
+  @keyframes spin-slow  { to { transform: rotate(360deg); } }
+  @keyframes spin-rev   { to { transform: rotate(-360deg); } }
+  @keyframes pulse-ring {
+    0%   { transform: scale(1);   opacity: .6; }
+    100% { transform: scale(1.9); opacity: 0;  }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes draw-line {
+    from { stroke-dashoffset: 600; }
+    to   { stroke-dashoffset: 0; }
+  }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:0} }
+  @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+  @keyframes scan {
+    0%   { top: 0; opacity: .5; }
+    100% { top: 100%; opacity: 0; }
+  }
+  @keyframes grain {
+    0%,100% { transform: translate(0,0); }
+    10%      { transform: translate(-2px,-3px); }
+    20%      { transform: translate(3px,2px); }
+    30%      { transform: translate(-1px,4px); }
+    40%      { transform: translate(4px,-1px); }
+    50%      { transform: translate(-3px,3px); }
+    60%      { transform: translate(2px,-4px); }
+    70%      { transform: translate(-4px,2px); }
+    80%      { transform: translate(3px,-2px); }
+    90%      { transform: translate(-2px,1px); }
+  }
+  @keyframes hex-pulse {
+    0%,100% { filter: drop-shadow(0 0 12px rgba(0,212,170,.5)); }
+    50%      { filter: drop-shadow(0 0 28px rgba(0,212,170,.9)); }
+  }
+  @keyframes count-up {
+    from { opacity:0; transform:translateY(8px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  /* ── Noise overlay ────────────────────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 999; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='.04'/%3E%3C/svg%3E");
+    opacity: .35;
+    animation: grain 1.2s steps(1) infinite;
+  }
+
+  /* ── Nav ──────────────────────────────────────────────────────── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 48px;
+    background: linear-gradient(to bottom, rgba(5,8,16,.95) 0%, transparent 100%);
+    backdrop-filter: blur(8px);
+  }
+
+  .nav-logo {
+    display: flex; align-items: center; gap: 12px;
+  }
+
+  .logo-hex {
+    width: 36px; height: 36px;
+    clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+    background: linear-gradient(135deg, var(--teal), #0099ff);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--r); font-weight: 900; font-size: 15px; color: var(--night);
+    box-shadow: 0 0 20px var(--glow-t);
+    animation: hex-pulse 3s ease-in-out infinite;
+  }
+
+  .logo-text {
+    font-family: var(--r); font-weight: 900; font-size: 20px;
+    letter-spacing: 3px; text-transform: uppercase;
+    background: linear-gradient(90deg, var(--ice), var(--teal));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  .nav-links {
+    display: flex; align-items: center; gap: 36px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: var(--m); font-size: 11px; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--silver);
+    transition: color .2s;
+  }
+  .nav-links a:hover { color: var(--teal); }
+
+  .nav-cta {
+    padding: 9px 22px; border-radius: 4px;
+    border: 1px solid rgba(0,212,170,.5);
+    background: rgba(0,212,170,.08);
+    color: var(--teal) !important;
+    font-family: var(--m) !important;
+    transition: all .2s !important;
+  }
+  .nav-cta:hover {
+    background: rgba(0,212,170,.18) !important;
+    box-shadow: 0 0 16px var(--glow-t);
+  }
+
+  /* ── Hero ─────────────────────────────────────────────────────── */
+  .hero {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    padding: 120px 48px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Grid lines bg */
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(0,212,170,.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,170,.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 40%, transparent 100%);
+  }
+
+  /* Radial glow */
+  .hero::after {
+    content: '';
+    position: absolute; top: 10%; left: 40%;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,212,170,.07) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-left {
+    position: relative; z-index: 2;
+    animation: fade-up .8s ease forwards;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--m); font-size: 10px; letter-spacing: 2.5px;
+    text-transform: uppercase; color: var(--teal);
+    background: rgba(0,212,170,.08); border: 1px solid rgba(0,212,170,.25);
+    padding: 6px 14px; border-radius: 2px;
+    margin-bottom: 28px;
+  }
+
+  .eyebrow-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--teal); box-shadow: 0 0 8px var(--teal);
+    animation: blink 1.5s infinite;
+  }
+
+  .hero-h1 {
+    font-family: var(--r); font-weight: 900;
+    font-size: clamp(52px, 6vw, 88px);
+    line-height: .95; letter-spacing: -2px;
+    margin-bottom: 8px;
+  }
+
+  .hero-h1 em {
+    font-style: italic; color: var(--teal);
+    display: block;
+  }
+
+  .hero-sub {
+    font-family: var(--r); font-style: italic;
+    font-size: clamp(16px, 2vw, 22px);
+    color: var(--silver); margin-bottom: 32px;
+    line-height: 1.5; max-width: 460px;
+  }
+
+  .hero-tagline {
+    font-family: var(--m); font-size: 13px; color: var(--dim);
+    letter-spacing: .5px; margin-bottom: 44px;
+    padding-left: 16px; border-left: 2px solid var(--wire);
+    max-width: 400px; line-height: 1.7;
+  }
+
+  .hero-tagline span { color: var(--silver); }
+
+  .hero-actions {
+    display: flex; align-items: center; gap: 16px;
+  }
+
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 14px 32px; border-radius: 4px;
+    background: linear-gradient(135deg, var(--teal), #0099ff);
+    color: var(--night); font-family: var(--m); font-size: 12px;
+    font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase;
+    border: none; cursor: pointer;
+    box-shadow: 0 0 30px rgba(0,212,170,.3);
+    transition: all .25s;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 40px rgba(0,212,170,.45);
+  }
+
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 14px 32px; border-radius: 4px;
+    background: transparent; border: 1px solid var(--wire);
+    color: var(--silver); font-family: var(--m); font-size: 12px;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    cursor: pointer; transition: all .25s;
+  }
+  .btn-ghost:hover { border-color: var(--teal); color: var(--teal); }
+
+  /* ── Shield Visual ────────────────────────────────────────────── */
+  .hero-right {
+    position: relative; z-index: 2;
+    display: flex; align-items: center; justify-content: center;
+    animation: fade-up .8s .3s ease both;
+  }
+
+  .shield-wrap {
+    position: relative; width: 420px; height: 420px;
+    animation: float 8s ease-in-out infinite;
+  }
+
+  .ring {
+    position: absolute; border-radius: 50%;
+    border: 1px solid rgba(0,212,170,.12);
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+  }
+  .ring-1 { width:320px; height:320px; animation: spin-slow 40s linear infinite; border-style: dashed; }
+  .ring-2 { width:390px; height:390px; animation: spin-rev  30s linear infinite; }
+  .ring-3 { width:460px; height:460px; border-color: rgba(0,153,255,.06); }
+
+  /* Pulse rings */
+  .pulse-ring {
+    position: absolute; border-radius: 50%;
+    border: 1px solid var(--teal);
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    width: 280px; height: 280px;
+    animation: pulse-ring 3.5s ease-out infinite;
+  }
+  .pulse-ring:nth-child(2) { animation-delay: 1.2s; }
+  .pulse-ring:nth-child(3) { animation-delay: 2.4s; }
+
+  /* Central hex */
+  .hex-center {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    width: 180px; height: 180px;
+  }
+
+  .hex-bg {
+    width: 100%; height: 100%;
+    clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+    background: linear-gradient(135deg, rgba(0,212,170,.15), rgba(0,153,255,.1));
+    border: none;
+    display: flex; align-items: center; justify-content: center;
+    animation: hex-pulse 3s ease-in-out infinite;
+    position: relative;
+  }
+
+  .hex-bg::before {
+    content: '';
+    position: absolute; inset: 2px;
+    clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+    background: var(--ink);
+  }
+
+  .hex-letter {
+    position: relative; z-index: 1;
+    font-family: var(--r); font-weight: 900; font-size: 72px;
+    background: linear-gradient(135deg, var(--teal), #0099ff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    line-height: 1;
+  }
+
+  /* Orbiting dots */
+  .orbit-dot {
+    position: absolute; width: 8px; height: 8px;
+    border-radius: 50%; background: var(--teal);
+    box-shadow: 0 0 10px var(--teal);
+    top: 50%; left: 50%;
+    transform-origin: 0 0;
+  }
+
+  /* Floating labels */
+  .float-label {
+    position: absolute;
+    background: rgba(13,21,38,.9); border: 1px solid var(--wire);
+    padding: 8px 12px; border-radius: 4px;
+    font-family: var(--m); font-size: 10px; letter-spacing: 1px;
+    color: var(--silver); white-space: nowrap;
+    backdrop-filter: blur(8px);
+  }
+  .float-label span { color: var(--teal); display: block; font-size: 9px; margin-bottom: 2px; }
+  .fl-1 { top: 5%;  left: -10%; }
+  .fl-2 { top: 30%; right: -12%; }
+  .fl-3 { bottom: 8%; left: 0%; }
+
+  /* Scan line */
+  .scanline {
+    position: absolute; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0,212,170,.4), transparent);
+    animation: scan 4s linear infinite;
+    pointer-events: none;
+  }
+
+  /* ── Marquee ──────────────────────────────────────────────────── */
+  .marquee-wrap {
+    overflow: hidden; border-top: 1px solid var(--wire);
+    border-bottom: 1px solid var(--wire);
+    background: var(--ink);
+    padding: 14px 0;
+  }
+
+  .marquee-track {
+    display: flex; gap: 0;
+    width: max-content;
+    animation: marquee 25s linear infinite;
+  }
+
+  .marquee-item {
+    display: flex; align-items: center; gap: 32px;
+    padding: 0 40px;
+    font-family: var(--m); font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--dim);
+    white-space: nowrap;
+  }
+
+  .marquee-item strong { color: var(--teal); }
+  .marquee-sep { color: var(--wire); }
+
+  /* ── Section shared ───────────────────────────────────────────── */
+  section { padding: 100px 48px; }
+
+  .section-label {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--m); font-size: 10px; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--teal);
+    margin-bottom: 20px;
+  }
+  .section-label::before {
+    content: ''; width: 24px; height: 1px; background: var(--teal);
+  }
+
+  .section-h2 {
+    font-family: var(--r); font-weight: 900;
+    font-size: clamp(36px, 4vw, 58px);
+    line-height: 1.05; letter-spacing: -1.5px;
+    margin-bottom: 20px;
+  }
+
+  .section-h2 em { font-style: italic; color: var(--teal); }
+
+  .section-body {
+    font-size: 16px; color: var(--silver); line-height: 1.75;
+    max-width: 560px;
+  }
+
+  /* ── Problem ──────────────────────────────────────────────────── */
+  .problem {
+    background: var(--ink);
+    position: relative; overflow: hidden;
+  }
+
+  .problem-grid {
+    display: grid; grid-template-columns: 1fr 60px 1fr;
+    gap: 0; align-items: start; max-width: 1000px; margin: 60px auto 0;
+  }
+
+  .prob-col {
+    padding: 36px;
+    border-radius: 6px;
+  }
+
+  .prob-bad  { background: rgba(224,85,85,.06); border: 1px solid rgba(224,85,85,.2); }
+  .prob-good { background: rgba(0,212,170,.06); border: 1px solid rgba(0,212,170,.2); }
+
+  .prob-head {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--m); font-size: 11px; letter-spacing: 2px;
+    text-transform: uppercase; margin-bottom: 24px;
+  }
+
+  .prob-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.04);
+    font-size: 14px; color: var(--silver); line-height: 1.5;
+  }
+
+  .prob-icon-bad  { color: var(--danger); font-size: 12px; margin-top: 2px; }
+  .prob-icon-good { color: var(--teal);   font-size: 12px; margin-top: 2px; }
+
+  .vs-divider {
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--r); font-weight: 700; font-size: 18px;
+    color: var(--dim); padding-top: 120px;
+  }
+
+  /* ── Features ─────────────────────────────────────────────────── */
+  .features { background: var(--night); }
+
+  .feat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px; margin-top: 60px;
+    border: 2px solid var(--wire); border-radius: 8px; overflow: hidden;
+  }
+
+  .feat-card {
+    padding: 44px 40px;
+    background: var(--ink);
+    transition: background .3s;
+    position: relative; overflow: hidden;
+  }
+
+  .feat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--teal), transparent);
+    opacity: 0; transition: opacity .3s;
+  }
+  .feat-card:hover { background: rgba(0,212,170,.04); }
+  .feat-card:hover::before { opacity: 1; }
+
+  .feat-number {
+    font-family: var(--m); font-size: 11px; color: var(--dim);
+    letter-spacing: 2px; margin-bottom: 20px;
+  }
+
+  .feat-icon {
+    width: 52px; height: 52px; border-radius: 8px;
+    background: rgba(0,212,170,.08); border: 1px solid rgba(0,212,170,.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; margin-bottom: 24px;
+  }
+
+  .feat-h3 {
+    font-family: var(--r); font-weight: 700; font-size: 24px;
+    margin-bottom: 14px; letter-spacing: -.5px;
+  }
+
+  .feat-p {
+    font-size: 14px; color: var(--silver); line-height: 1.7;
+    margin-bottom: 20px;
+  }
+
+  .feat-tags {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+
+  .ftag {
+    font-family: var(--m); font-size: 10px; letter-spacing: .8px;
+    color: var(--dim); background: var(--navy);
+    border: 1px solid var(--wire); border-radius: 2px;
+    padding: 3px 8px; text-transform: uppercase;
+  }
+
+  /* ── Stats strip ──────────────────────────────────────────────── */
+  .stats-strip {
+    background: var(--ink);
+    border-top: 1px solid var(--wire);
+    border-bottom: 1px solid var(--wire);
+    padding: 60px 48px;
+    display: grid; grid-template-columns: repeat(4,1fr); gap: 2px;
+  }
+
+  .stat-item {
+    text-align: center; padding: 24px;
+    border-right: 1px solid var(--wire);
+    animation: count-up .6s ease forwards; opacity: 0;
+  }
+  .stat-item:last-child { border-right: none; }
+  .stat-item:nth-child(1) { animation-delay: .1s; }
+  .stat-item:nth-child(2) { animation-delay: .2s; }
+  .stat-item:nth-child(3) { animation-delay: .3s; }
+  .stat-item:nth-child(4) { animation-delay: .4s; }
+
+  .stat-num {
+    font-family: var(--r); font-weight: 900; font-size: 52px;
+    background: linear-gradient(135deg, var(--teal), #0099ff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    line-height: 1; margin-bottom: 8px;
+  }
+
+  .stat-label {
+    font-family: var(--m); font-size: 11px; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--dim);
+  }
+
+  /* ── Architecture ─────────────────────────────────────────────── */
+  .arch { background: var(--night); }
+
+  .arch-diagram {
+    margin-top: 60px; position: relative;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+
+  .arch-layer {
+    width: 100%; max-width: 720px;
+    display: flex; align-items: center; gap: 0;
+    border-radius: 6px; overflow: hidden;
+    border: 1px solid var(--wire);
+    transition: transform .2s, box-shadow .2s;
+  }
+  .arch-layer:hover {
+    transform: translateX(6px);
+    box-shadow: -4px 0 0 var(--teal), 0 0 20px rgba(0,212,170,.1);
+  }
+
+  .arch-badge {
+    padding: 18px 20px; min-width: 140px; text-align: center;
+    font-family: var(--m); font-size: 10px; letter-spacing: 1.5px;
+    text-transform: uppercase; font-weight: 500;
+  }
+
+  .arch-content {
+    flex: 1; padding: 18px 24px;
+    background: var(--ink);
+    font-size: 13px; color: var(--silver); line-height: 1.5;
+  }
+
+  .arch-content strong { color: var(--ice); font-weight: 500; }
+
+  .arch-arrow {
+    font-family: var(--m); font-size: 18px; color: var(--wire);
+    padding: 4px;
+  }
+
+  /* ── Comparison ───────────────────────────────────────────────── */
+  .compare { background: var(--ink); }
+
+  .compare-table {
+    margin-top: 60px; width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  .compare-table th {
+    padding: 16px 24px; text-align: left;
+    font-family: var(--m); font-size: 11px; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--dim);
+    border-bottom: 1px solid var(--wire);
+  }
+
+  .compare-table th:nth-child(2) { color: var(--silver); text-align: center; }
+  .compare-table th:nth-child(3) { color: var(--teal);   text-align: center; }
+
+  .compare-table td {
+    padding: 14px 24px; border-bottom: 1px solid rgba(255,255,255,.03);
+    vertical-align: middle;
+  }
+
+  .compare-table tr:hover td { background: rgba(255,255,255,.02); }
+
+  .compare-table td:nth-child(2),
+  .compare-table td:nth-child(3) { text-align: center; }
+
+  .chk-yes  { color: var(--teal);   font-size: 16px; }
+  .chk-no   { color: var(--danger); font-size: 14px; }
+  .chk-warn { color: var(--gold);   font-size: 14px; }
+
+  .highlight-col { background: rgba(0,212,170,.04); }
+
+  /* ── Skills showcase ──────────────────────────────────────────── */
+  .skills-section { background: var(--night); }
+
+  .skills-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px; margin-top: 60px;
+  }
+
+  .skill-card {
+    padding: 24px; border-radius: 6px;
+    background: var(--ink); border: 1px solid var(--wire);
+    transition: all .25s; cursor: default;
+    position: relative; overflow: hidden;
+  }
+
+  .skill-card::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(0,212,170,.06), transparent);
+    opacity: 0; transition: opacity .3s;
+  }
+  .skill-card:hover { border-color: rgba(0,212,170,.4); transform: translateY(-4px); }
+  .skill-card:hover::after { opacity: 1; }
+
+  .skill-icon {
+    font-size: 28px; margin-bottom: 14px;
+    display: block;
+  }
+
+  .skill-name {
+    font-family: var(--r); font-weight: 700; font-size: 18px;
+    margin-bottom: 8px;
+  }
+
+  .skill-desc {
+    font-size: 13px; color: var(--silver); line-height: 1.6;
+  }
+
+  .skill-risk {
+    display: inline-block; margin-top: 12px;
+    font-family: var(--m); font-size: 10px; letter-spacing: 1px;
+    padding: 3px 8px; border-radius: 2px; text-transform: uppercase;
+  }
+  .risk-low    { background: rgba(0,212,170,.1); color: var(--teal);  border: 1px solid rgba(0,212,170,.3); }
+  .risk-medium { background: rgba(200,168,75,.1); color: var(--gold); border: 1px solid rgba(200,168,75,.3); }
+  .risk-high   { background: rgba(224,85,85,.1); color: var(--danger); border: 1px solid rgba(224,85,85,.3); }
+
+  /* ── CTA ──────────────────────────────────────────────────────── */
+  .cta-section {
+    background: var(--ink);
+    text-align: center;
+    position: relative; overflow: hidden;
+  }
+
+  .cta-section::before {
+    content: '';
+    position: absolute; top: -200px; left: 50%;
+    transform: translateX(-50%);
+    width: 800px; height: 400px;
+    background: radial-gradient(ellipse, rgba(0,212,170,.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .cta-hex-bg {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    font-family: var(--r); font-weight: 900;
+    font-size: 360px; color: rgba(0,212,170,.02);
+    pointer-events: none; line-height: 1;
+    user-select: none;
+  }
+
+  .cta-h2 {
+    font-family: var(--r); font-weight: 900;
+    font-size: clamp(40px, 5vw, 72px);
+    line-height: 1; letter-spacing: -2px;
+    margin-bottom: 20px; position: relative;
+  }
+
+  .cta-h2 em { font-style: italic; color: var(--teal); }
+
+  .cta-sub {
+    font-size: 16px; color: var(--silver); margin-bottom: 48px;
+    position: relative; max-width: 500px; margin-inline: auto;
+    margin-bottom: 48px; line-height: 1.7;
+  }
+
+  .cta-buttons {
+    display: flex; justify-content: center; gap: 16px;
+    flex-wrap: wrap; position: relative;
+  }
+
+  .install-block {
+    margin-top: 48px;
+    display: inline-flex; align-items: center; gap: 0;
+    border: 1px solid var(--wire); border-radius: 6px;
+    overflow: hidden; position: relative;
+  }
+
+  .install-label {
+    padding: 12px 18px;
+    background: var(--navy);
+    font-family: var(--m); font-size: 11px; color: var(--dim);
+    letter-spacing: 1px; text-transform: uppercase;
+    border-right: 1px solid var(--wire);
+  }
+
+  .install-cmd {
+    padding: 12px 24px;
+    font-family: var(--m); font-size: 13px; color: var(--teal);
+    background: transparent; letter-spacing: .5px;
+  }
+
+  .install-copy {
+    padding: 12px 16px; cursor: pointer;
+    background: transparent; border: none; border-left: 1px solid var(--wire);
+    color: var(--dim); font-size: 14px; transition: color .2s;
+  }
+  .install-copy:hover { color: var(--teal); }
+
+  /* ── Footer ───────────────────────────────────────────────────── */
+  footer {
+    background: var(--night);
+    padding: 60px 48px 36px;
+    border-top: 1px solid var(--wire);
+  }
+
+  .footer-top {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 48px; margin-bottom: 48px;
+  }
+
+  .footer-brand p {
+    font-size: 14px; color: var(--silver); line-height: 1.7;
+    margin-top: 16px; max-width: 280px;
+  }
+
+  .footer-col h4 {
+    font-family: var(--m); font-size: 10px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--dim); margin-bottom: 16px;
+  }
+
+  .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+  .footer-col ul li a {
+    font-size: 14px; color: var(--silver); transition: color .2s;
+  }
+  .footer-col ul li a:hover { color: var(--teal); }
+
+  .footer-bottom {
+    padding-top: 24px; border-top: 1px solid var(--wire);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+
+  .footer-bottom p {
+    font-family: var(--m); font-size: 11px; color: var(--dim); letter-spacing: .5px;
+  }
+
+  .footer-bottom span { color: var(--teal); }
+
+  /* ── Responsive ───────────────────────────────────────────────── */
+  @media (max-width: 900px) {
+    nav { padding: 16px 24px; }
+    .nav-links { display: none; }
+    .hero { grid-template-columns: 1fr; padding: 100px 24px 60px; }
+    .hero-right { display: none; }
+    section { padding: 60px 24px; }
+    .feat-grid { grid-template-columns: 1fr; }
+    .stats-strip { grid-template-columns: repeat(2,1fr); }
+    .skills-grid { grid-template-columns: repeat(2,1fr); }
+    .problem-grid { grid-template-columns: 1fr; }
+    .vs-divider { display: none; }
+    .footer-top { grid-template-columns: 1fr 1fr; }
+    .compare-table { font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Nav ────────────────────────────────────────────────────── -->
+<nav>
+  <div class="nav-logo">
+    <div class="logo-hex">Æ</div>
+    <span class="logo-text">Aegis</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#compare">vs OpenClaw</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#cta" class="nav-cta">Get Started →</a></li>
+  </ul>
+</nav>
+
+<!-- ── Hero ───────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="hero-eyebrow">
+      <span class="eyebrow-dot"></span>
+      Open-source · Self-hosted · Enterprise-grade
+    </div>
+
+    <h1 class="hero-h1">
+      The AI Agent
+      <em>Your Security</em>
+      Team Won't Hate.
+    </h1>
+
+    <p class="hero-sub">
+      All the power of an autonomous AI agent — none of the risk.
+    </p>
+
+    <p class="hero-tagline">
+      <span>OpenClaw is powerful. But it runs shell commands on your machine with no sandbox, stores your memories in plaintext, and has zero audit trail.</span>
+      Aegis does everything OpenClaw does — and wraps it in enterprise-grade security.
+    </p>
+
+    <div class="hero-actions">
+      <button class="btn-primary" onclick="document.getElementById('cta').scrollIntoView({behavior:'smooth'})">
+        ⬡ Deploy Aegis
+      </button>
+      <button class="btn-ghost" onclick="document.getElementById('compare').scrollIntoView({behavior:'smooth'})">
+        See Comparison →
+      </button>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="shield-wrap">
+      <!-- Scan line -->
+      <div class="scanline"></div>
+
+      <!-- Rings -->
+      <div class="ring ring-1"></div>
+      <div class="ring ring-2"></div>
+      <div class="ring ring-3"></div>
+
+      <!-- Pulse -->
+      <div class="pulse-ring"></div>
+      <div class="pulse-ring"></div>
+      <div class="pulse-ring"></div>
+
+      <!-- Center -->
+      <div class="hex-center">
+        <div class="hex-bg">
+          <span class="hex-letter">Æ</span>
+        </div>
+      </div>
+
+      <!-- Floating labels -->
+      <div class="float-label fl-1">
+        <span>LAYER 1</span>
+        Docker Sandbox
+      </div>
+      <div class="float-label fl-2">
+        <span>LAYER 2</span>
+        OPA Policy Engine
+      </div>
+      <div class="float-label fl-3">
+        <span>LAYER 3</span>
+        AES-256 Memory
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Marquee ─────────────────────────────────────────────────── -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <div class="marquee-item"><strong>Docker Sandboxed</strong><span class="marquee-sep">◆</span>Every command isolated</div>
+    <div class="marquee-item"><strong>OPA Policy Engine</strong><span class="marquee-sep">◆</span>Allowlist before execution</div>
+    <div class="marquee-item"><strong>AES-256 Memory</strong><span class="marquee-sep">◆</span>Per-user encryption keys</div>
+    <div class="marquee-item"><strong>JWT Auth</strong><span class="marquee-sep">◆</span>Rate-limited gateway</div>
+    <div class="marquee-item"><strong>Full Audit Trail</strong><span class="marquee-sep">◆</span>JSONL · SIEM-ready</div>
+    <div class="marquee-item"><strong>GDPR Ready</strong><span class="marquee-sep">◆</span>Right to erasure built-in</div>
+    <div class="marquee-item"><strong>3-Minute Setup</strong><span class="marquee-sep">◆</span>Interactive wizard</div>
+    <!-- Duplicate for seamless loop -->
+    <div class="marquee-item"><strong>Docker Sandboxed</strong><span class="marquee-sep">◆</span>Every command isolated</div>
+    <div class="marquee-item"><strong>OPA Policy Engine</strong><span class="marquee-sep">◆</span>Allowlist before execution</div>
+    <div class="marquee-item"><strong>AES-256 Memory</strong><span class="marquee-sep">◆</span>Per-user encryption keys</div>
+    <div class="marquee-item"><strong>JWT Auth</strong><span class="marquee-sep">◆</span>Rate-limited gateway</div>
+    <div class="marquee-item"><strong>Full Audit Trail</strong><span class="marquee-sep">◆</span>JSONL · SIEM-ready</div>
+    <div class="marquee-item"><strong>GDPR Ready</strong><span class="marquee-sep">◆</span>Right to erasure built-in</div>
+    <div class="marquee-item"><strong>3-Minute Setup</strong><span class="marquee-sep">◆</span>Interactive wizard</div>
+  </div>
+</div>
+
+<!-- ── Problem ─────────────────────────────────────────────────── -->
+<section class="problem">
+  <div class="section-label">The Problem</div>
+  <h2 class="section-h2">Power shouldn't come<br><em>at the cost of safety.</em></h2>
+  <p class="section-body">OpenClaw proved people want autonomous AI agents. Aegis proves you can have them without gambling your company's data.</p>
+
+  <div class="problem-grid">
+    <div class="prob-col prob-bad">
+      <div class="prob-head"><span style="color:var(--danger)">✕</span> OpenClaw as-is</div>
+      <div class="prob-item"><span class="prob-icon-bad">✕</span>Shell commands run directly on host machine — one prompt injection = catastrophe</div>
+      <div class="prob-item"><span class="prob-icon-bad">✕</span>Memories stored in plaintext — full file access = full memory access</div>
+      <div class="prob-item"><span class="prob-icon-bad">✕</span>No audit trail — you can't know what your agent did or when</div>
+      <div class="prob-item"><span class="prob-icon-bad">✕</span>API keys in <code style="font-family:var(--m);font-size:12px;color:var(--danger)">.env</code> files — no vault, no rotation</div>
+      <div class="prob-item"><span class="prob-icon-bad">✕</span>LLM decides what's safe — that's not a security model</div>
+      <div class="prob-item"><span class="prob-icon-bad">✕</span>No compliance story for SOC2, HIPAA, or enterprise IT</div>
+    </div>
+
+    <div class="vs-divider">vs</div>
+
+    <div class="prob-col prob-good">
+      <div class="prob-head"><span style="color:var(--teal)">✓</span> Aegis</div>
+      <div class="prob-item"><span class="prob-icon-good">✓</span>Every command runs in an ephemeral Docker container — no network, no root, no escape</div>
+      <div class="prob-item"><span class="prob-icon-good">✓</span>AES-256 encryption with per-user derived keys — cross-user reads are cryptographically impossible</div>
+      <div class="prob-item"><span class="prob-icon-good">✓</span>Tamper-evident JSONL audit log for every action — ships to Splunk, Datadog, CloudWatch</div>
+      <div class="prob-item"><span class="prob-icon-good">✓</span>HashiCorp Vault-backed secrets — zero keys in env files</div>
+      <div class="prob-item"><span class="prob-icon-good">✓</span>OPA Policy Engine evaluates every tool call before execution</div>
+      <div class="prob-item"><span class="prob-icon-good">✓</span>GDPR right-to-erasure, SOC2-ready audit trail, JWT auth gateway</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ────────────────────────────────────────────────── -->
+<section class="features" id="features">
+  <div class="section-label">Core Pillars</div>
+  <h2 class="section-h2">Four layers.<br><em>Zero compromises.</em></h2>
+
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-number">01 / 04</div>
+      <div class="feat-icon">🏖️</div>
+      <h3 class="feat-h3">Docker Sandbox</h3>
+      <p class="feat-p">Every tool call executes in an isolated, ephemeral container. No network egress. No filesystem writes. All Linux capabilities dropped. Root access impossible. The host machine is never touched.</p>
+      <div class="feat-tags">
+        <span class="ftag">--network=none</span>
+        <span class="ftag">--cap-drop=ALL</span>
+        <span class="ftag">30s timeout</span>
+        <span class="ftag">256MB limit</span>
+      </div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-number">02 / 04</div>
+      <div class="feat-icon">🛡️</div>
+      <h3 class="feat-h3">OPA Policy Engine</h3>
+      <p class="feat-p">Open Policy Agent evaluates every tool call before execution. Dangerous shell patterns, sensitive file paths, and destructive SQL are blocked at the policy layer — not by the LLM.</p>
+      <div class="feat-tags">
+        <span class="ftag">Allowlist model</span>
+        <span class="ftag">Pattern blocking</span>
+        <span class="ftag">Human-in-loop</span>
+        <span class="ftag">Risk levels</span>
+      </div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-number">03 / 04</div>
+      <div class="feat-icon">🔒</div>
+      <h3 class="feat-h3">Encrypted Memory</h3>
+      <p class="feat-p">Agent memories are encrypted at rest using AES-256 with per-user keys derived via scrypt. Cross-user reads are cryptographically impossible. GDPR right-to-erasure is a single command.</p>
+      <div class="feat-tags">
+        <span class="ftag">AES-256</span>
+        <span class="ftag">scrypt key derivation</span>
+        <span class="ftag">GDPR erasure</span>
+        <span class="ftag">Zero PII in logs</span>
+      </div>
+    </div>
+
+    <div class="feat-card">
+      <div class="feat-number">04 / 04</div>
+      <div class="feat-icon">📋</div>
+      <h3 class="feat-h3">Audit Trail</h3>
+      <p class="feat-p">Every agent action is recorded in a tamper-evident JSONL audit log. Hashed user identities. Hashed arguments. Decision reason codes. Ships directly to Splunk, Datadog, or CloudWatch.</p>
+      <div class="feat-tags">
+        <span class="ftag">JSONL format</span>
+        <span class="ftag">SIEM-ready</span>
+        <span class="ftag">SHA-256 identities</span>
+        <span class="ftag">SOC2 aligned</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Stats ────────────────────────────────────────────────────── -->
+<div class="stats-strip">
+  <div class="stat-item">
+    <div class="stat-num">3min</div>
+    <div class="stat-label">Setup time</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">20+</div>
+    <div class="stat-label">Built-in skills</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">0</div>
+    <div class="stat-label">Keys in .env</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-num">100%</div>
+    <div class="stat-label">Open source</div>
+  </div>
+</div>
+
+<!-- ── Architecture ────────────────────────────────────────────── -->
+<section class="arch" id="architecture">
+  <div class="section-label">Architecture</div>
+  <h2 class="section-h2">Secure by design,<br><em>not by accident.</em></h2>
+  <p class="section-body">Every request flows through four independent security layers before execution. Any layer can block independently.</p>
+
+  <div class="arch-diagram">
+    <div class="arch-layer">
+      <div class="arch-badge" style="background:rgba(0,153,255,.08);color:#0099ff;border-right:1px solid var(--wire)">Gateway</div>
+      <div class="arch-content"><strong>mTLS + JWT Auth + Rate Limiting</strong> — All channel traffic authenticated. 30 req/min per user. Nginx reverse proxy with TLS termination.</div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-layer">
+      <div class="arch-badge" style="background:rgba(200,168,75,.08);color:var(--gold);border-right:1px solid var(--wire)">Policy</div>
+      <div class="arch-content"><strong>OPA Policy Engine</strong> — Every tool call evaluated against allowlist before execution. Dangerous patterns, sensitive paths, and destructive operations blocked at policy layer.</div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-layer">
+      <div class="arch-badge" style="background:rgba(0,212,170,.08);color:var(--teal);border-right:1px solid var(--wire)">Agent</div>
+      <div class="arch-content"><strong>LangGraph Agent + Tool Execution</strong> — Reasoning layer with tool calls, sandboxed execution, streaming responses, and human-in-the-loop confirmation for high-risk actions.</div>
+    </div>
+    <div class="arch-arrow">↓</div>
+    <div class="arch-layer">
+      <div class="arch-badge" style="background:rgba(224,85,85,.08);color:var(--danger);border-right:1px solid var(--wire)">Persistence</div>
+      <div class="arch-content"><strong>Encrypted Memory + Audit Log</strong> — AES-256 memory store with per-user keys. Every action written to tamper-evident JSONL. HashiCorp Vault for all secrets.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Comparison ──────────────────────────────────────────────── -->
+<section class="compare" id="compare">
+  <div class="section-label">Comparison</div>
+  <h2 class="section-h2">How Aegis stacks up<br><em>against OpenClaw.</em></h2>
+
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Capability</th>
+        <th>OpenClaw</th>
+        <th>Aegis</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Multi-channel (Telegram, Slack, Discord)</td><td><span class="chk-yes">✓</span></td><td class="highlight-col"><span class="chk-yes">✓</span></td></tr>
+      <tr><td>Persistent memory across sessions</td><td><span class="chk-yes">✓</span></td><td class="highlight-col"><span class="chk-yes">✓</span></td></tr>
+      <tr><td>Tool / skill execution</td><td><span class="chk-yes">✓</span></td><td class="highlight-col"><span class="chk-yes">✓</span></td></tr>
+      <tr><td>Proactive heartbeat / cron tasks</td><td><span class="chk-yes">✓</span></td><td class="highlight-col"><span class="chk-yes">✓</span></td></tr>
+      <tr><td>Setup time</td><td><span style="color:var(--gold);font-family:var(--m);font-size:12px">30 min</span></td><td class="highlight-col"><span style="color:var(--teal);font-family:var(--m);font-size:12px">3 min</span></td></tr>
+      <tr><td>Sandboxed execution environment</td><td><span class="chk-no">✕</span></td><td class="highlight-col"><span class="chk-yes">✓</span></td></tr>
+      <tr><td>Memory encrypted at rest</td><td><span class="chk-no">✕</span></td><td class="highlight-col"><span class="chk-yes">✓</span></td></tr>
+      <tr><td>Policy engine (pre-execution)</td><td><span class="chk-no">✕</span></td><td class="highlight-col"><span class="chk-yes">✓</span></td></tr>
+      <tr><td>Tamper-evident audit log</td><td><span class="chk-no">✕</span></td><td class="highlight-col"><span class="chk-yes">✓</span></td></tr>
+      <tr><td>Vault-backed secrets (no .env keys)</td><td><span class="chk-no">✕</span></td><td class="highlight-col"><span class="chk-yes">✓</span></td></tr>
+      <tr><td>GDPR right-to-erasure</td><td><span class="chk-no">✕</span></td><td class="highlight-col"><span class="chk-yes">✓</span></td></tr>
+      <tr><td>Enterprise compliance story</td><td><span class="chk-no">✕</span></td><td class="highlight-col"><span class="chk-yes">✓</span></td></tr>
+      <tr><td>Community skill ecosystem</td><td><span style="color:var(--teal);font-family:var(--m);font-size:12px">5,400+</span></td><td class="highlight-col"><span style="color:var(--teal);font-family:var(--m);font-size:12px">Growing</span></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── Skills ──────────────────────────────────────────────────── -->
+<section class="skills-section" id="skills">
+  <div class="section-label">Productivity Skills</div>
+  <h2 class="section-h2">Everything you need,<br><em>secure by default.</em></h2>
+  <p class="section-body">Every skill ships with a defined risk level, policy rules, and encrypted credential storage. One command to install.</p>
+
+  <div class="skills-grid">
+    <div class="skill-card">
+      <span class="skill-icon">✉</span>
+      <div class="skill-name">Gmail</div>
+      <div class="skill-desc">Triage inbox, send emails with preview confirmation, search and snooze threads.</div>
+      <span class="skill-risk risk-medium">Medium risk</span>
+    </div>
+    <div class="skill-card">
+      <span class="skill-icon">◷</span>
+      <div class="skill-name">Google Calendar</div>
+      <div class="skill-desc">View schedule, find free slots, create events, send invites — all via natural language.</div>
+      <span class="skill-risk risk-low">Low risk</span>
+    </div>
+    <div class="skill-card">
+      <span class="skill-icon">✓</span>
+      <div class="skill-name">Todoist</div>
+      <div class="skill-desc">Add tasks, mark complete, bulk import, view overdue — your task manager via chat.</div>
+      <span class="skill-risk risk-low">Low risk</span>
+    </div>
+    <div class="skill-card">
+      <span class="skill-icon">◑</span>
+      <div class="skill-name">Morning Briefing</div>
+      <div class="skill-desc">Daily digest combining calendar, tasks, and email triage — delivered to your channel at your chosen time.</div>
+      <span class="skill-risk risk-low">Low risk</span>
+    </div>
+    <div class="skill-card">
+      <span class="skill-icon">⊕</span>
+      <div class="skill-name">Web Search</div>
+      <div class="skill-desc">DuckDuckGo + Wikipedia search. No API key required. Policy-gated result handling.</div>
+      <span class="skill-risk risk-low">Low risk</span>
+    </div>
+    <div class="skill-card">
+      <span class="skill-icon">⊞</span>
+      <div class="skill-name">+ 15 More Skills</div>
+      <div class="skill-desc">GitHub, Jira, Slack, Notion, Google Sheets, SQL, AWS, and more. All with consistent risk labeling.</div>
+      <span class="skill-risk risk-medium">All risk levels</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ─────────────────────────────────────────────────────── -->
+<section class="cta-section" id="cta">
+  <div class="cta-hex-bg">Æ</div>
+
+  <div class="section-label" style="justify-content:center">Get Started</div>
+  <h2 class="cta-h2">Your agent.<br><em>Under Aegis.</em></h2>
+  <p class="cta-sub">Open-source, self-hosted, enterprise-grade. Deploy in 3 minutes with the interactive wizard.</p>
+
+  <div class="cta-buttons">
+    <button class="btn-primary">⬡ Clone on GitHub</button>
+    <button class="btn-ghost">Read the Docs →</button>
+  </div>
+
+  <div style="display:flex;justify-content:center;margin-top:40px">
+    <div class="install-block">
+      <span class="install-label">install</span>
+      <span class="install-cmd">python wizard/setup_wizard.py</span>
+      <button class="install-copy" onclick="navigator.clipboard.writeText('python wizard/setup_wizard.py');this.textContent='✓';setTimeout(()=>this.textContent='⧉',1500)">⧉</button>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ─────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-brand">
+      <div class="nav-logo">
+        <div class="logo-hex">Æ</div>
+        <span class="logo-text">Aegis</span>
+      </div>
+      <p>The AI agent your security team won't hate. Open-source, self-hosted, enterprise-grade.</p>
+    </div>
+
+    <div class="footer-col">
+      <h4>Product</h4>
+      <ul>
+        <li><a href="#">Features</a></li>
+        <li><a href="#">Skills Registry</a></li>
+        <li><a href="#">Architecture</a></li>
+        <li><a href="#">Changelog</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>Developers</h4>
+      <ul>
+        <li><a href="#">Documentation</a></li>
+        <li><a href="#">GitHub</a></li>
+        <li><a href="#">API Reference</a></li>
+        <li><a href="#">Contributing</a></li>
+      </ul>
+    </div>
+
+    <div class="footer-col">
+      <h4>Security</h4>
+      <ul>
+        <li><a href="#">Security Model</a></li>
+        <li><a href="#">Disclosure Policy</a></li>
+        <li><a href="#">SOC2 Docs</a></li>
+        <li><a href="#">GDPR Guide</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <p>© 2026 Aegis. Open-source under MIT License.</p>
+    <p>Built with <span>♥</span> on LangGraph · Anthropic Claude · HashiCorp Vault</p>
+  </div>
+</footer>
+
+<script>
+  // Smooth nav highlight
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-links a');
+
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(a => {
+          a.style.color = a.getAttribute('href') === '#' + e.target.id
+            ? 'var(--teal)' : '';
+        });
+      }
+    });
+  }, { threshold: .3 });
+
+  sections.forEach(s => obs.observe(s));
+
+  // Orbit dots around shield
+  const shield = document.querySelector('.shield-wrap');
+  if (shield) {
+    const dots = [
+      { angle:  30, radius: 155, speed: .4  },
+      { angle: 150, radius: 165, speed: -.3 },
+      { angle: 270, radius: 155, speed: .25 },
+    ];
+
+    dots.forEach(d => {
+      const dot = document.createElement('div');
+      dot.className = 'orbit-dot';
+      dot.style.cssText = `
+        position:absolute; width:7px; height:7px; border-radius:50%;
+        background:var(--teal); box-shadow:0 0 10px var(--teal);
+        top:50%; left:50%; transform-origin:0 0; margin:-3.5px;
+      `;
+      shield.appendChild(dot);
+      d.el = dot;
+    });
+
+    let t = 0;
+    function animDots() {
+      t += .005;
+      dots.forEach(d => {
+        const a = d.angle * Math.PI / 180 + t * d.speed * 2 * Math.PI;
+        const x = Math.cos(a) * d.radius;
+        const y = Math.sin(a) * d.radius;
+        d.el.style.transform = `translate(${x}px, ${y}px)`;
+      });
+      requestAnimationFrame(animDots);
+    }
+    animDots();
+  }
+
+  // Reveal on scroll
+  const cards = document.querySelectorAll('.feat-card, .skill-card, .stat-item, .arch-layer');
+  const revealObs = new IntersectionObserver(entries => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        e.target.style.animation = `fade-up .5s ${i * .08}s ease both`;
+        revealObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: .1 });
+
+  cards.forEach(c => {
+    c.style.opacity = '0';
+    revealObs.observe(c);
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+agent:
+  model: claude-sonnet-4-5
+  name: Dilip's Aegis Assistant
+  provider: anthropic
+  timezone: America/New_York
+  user: Dilip
+channels:
+  web_ui:
+    enabled: true
+heartbeat:
+  enabled: false
+  morning_briefing: 0 8 * * *
+security:
+  audit_logging: true
+  memory_encryption: true
+  require_confirmation: High-risk only
+skills:
+  websearch:
+    enabled: true
