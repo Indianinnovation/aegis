@@ -1,9 +1,9 @@
 agent:
   model: claude-sonnet-4-5
-  name: Dilip's Aegis Assistant
+  name: Aegis Assistant
   provider: anthropic
   timezone: America/New_York
-  user: Dilip
+  user: User
 channels:
   web_ui:
     enabled: true

@@ -1,9 +1,11 @@
-import os, sys, hashlib, json, sqlite3, base64
+import os, sys, hashlib, json, sqlite3, base64, logging
 from datetime import datetime, timezone
 from pathlib import Path
 from cryptography.fernet import Fernet
 
+log = logging.getLogger(__name__)
 _INSECURE_DEFAULT = "aegis-default-dev-key-change-in-prod"
+_DATA_ROOT = Path("/app/data").resolve()
 
 
 class SecretsManager:
@@ -35,8 +37,11 @@ class SecretsManager:
 
 class EncryptedMemory:
     def __init__(self, db_path: str = "/app/data/memory.db"):
-        self.db_path = db_path
-        Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+        resolved = Path(db_path).resolve()
+        if not str(resolved).startswith(str(_DATA_ROOT)):
+            raise ValueError(f"Invalid db_path outside data directory: {db_path}")
+        self.db_path = str(resolved)
+        resolved.parent.mkdir(parents=True, exist_ok=True)
         key = os.getenv("MEMORY_MASTER_KEY", "")
         if not key or key == _INSECURE_DEFAULT or key.startswith("change-me"):
             msg = (
@@ -93,8 +98,8 @@ class EncryptedMemory:
         for (blob,) in rows:
             try:
                 out.append(f.decrypt(blob).decode())
-            except Exception:
-                pass
+            except Exception as e:
+                log.warning("Failed to decrypt memory blob: %s", e)
         return out
 
     def purge(self, user_id: str):
@@ -105,8 +110,11 @@ class EncryptedMemory:
 
 class AuditLogger:
     def __init__(self, path: str = "/app/data/audit.jsonl"):
-        self.path = path
-        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        resolved = Path(path).resolve()
+        if not str(resolved).startswith(str(_DATA_ROOT)):
+            raise ValueError(f"Invalid audit path outside data directory: {path}")
+        self.path = str(resolved)
+        resolved.parent.mkdir(parents=True, exist_ok=True)
 
     def log(self, user_id: str, tool: str, decision: str,
             reason: str, status: str, channel: str, session_id: str):

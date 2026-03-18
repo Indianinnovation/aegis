@@ -1,4 +1,4 @@
-import os, uuid, json, yaml, httpx
+import os, uuid, json, yaml, httpx, html, logging
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -16,19 +16,19 @@ from core.security import secrets, memory_store, audit
 cfg = yaml.safe_load(Path("/app/config.yaml").read_text())
 OPA_URL = os.getenv("OPA_URL", "http://opa:8181")
 
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost").split(",")
+
 app = FastAPI(title="Aegis Agent API")
 app.add_middleware(CORSMiddleware,
-    allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+    allow_origins=ALLOWED_ORIGINS, allow_methods=["POST", "GET", "DELETE"], allow_headers=["Content-Type"])
 
 @tool
 def web_search(query: str) -> str:
     """Search the web for current information."""
     try:
         from ddgs import DDGS
-        results = []
         with DDGS() as ddgs:
-            for r in ddgs.text(query, max_results=5):
-                results.append(r)
+            results = [r for r in ddgs.text(query, max_results=5)]
         if not results:
             return f"No results for: {query}"
         output = f"Web search results for '{query}':\n\n"
@@ -38,6 +38,7 @@ def web_search(query: str) -> str:
             output += f"   Source: {r.get('href','')}\n\n"
         return output
     except Exception as e:
+        logging.warning("web_search failed for query %r: %s", query, e)
         return f"Search failed: {str(e)}"
 
 @tool
@@ -52,8 +53,9 @@ def get_current_time() -> str:
 @tool
 def remember_this(content: str) -> str:
     """Save an important fact to memory."""
-    memory_store.save("default_user", content)
-    return f"Remembered: {content}"
+    safe_content = html.escape(content[:500])
+    memory_store.save("default_user", safe_content)
+    return f"Remembered: {safe_content}"
 
 @tool
 def recall_memories() -> str:
@@ -187,8 +189,8 @@ async def get_audit(limit: int = 20):
     for line in path.read_text().strip().split("\n")[-limit:]:
         try:
             entries.append(json.loads(line))
-        except Exception:
-            pass
+        except json.JSONDecodeError as e:
+            logging.warning("Skipping malformed audit line: %s", e)
     return {"entries": list(reversed(entries))}
 
 @app.get("/memories")
