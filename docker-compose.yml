@@ -23,6 +23,10 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - ANTHROPIC_MODEL=claude-sonnet-4-5
       - AGENT_TIMEZONE=America/New_York
+      - MEMORY_MASTER_KEY=${MEMORY_MASTER_KEY}
+      - VAULT_TOKEN=${VAULT_TOKEN}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - OPA_URL=http://opa:8181
     volumes:
       - ./agent/skills:/app/skills
       - ./agent/core:/app/core
@@ -40,7 +44,7 @@ services:
     cap_add:
       - IPC_LOCK
     environment:
-      - VAULT_DEV_ROOT_TOKEN_ID=aegis-dev-token-2026
+      - VAULT_DEV_ROOT_TOKEN_ID=${VAULT_TOKEN}
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
     healthcheck:
       test: ["CMD", "sh", "-c", "VAULT_ADDR=http://127.0.0.1:8200 vault status"]
@@ -69,7 +73,7 @@ services:
     image: redis:7-alpine
     container_name: aegis_redis
     restart: unless-stopped
-    command: redis-server --requirepass aegis-redis-secure-2026
+    command: redis-server --requirepass ${REDIS_PASSWORD}
     ports:
       - "6379:6379"
     networks:

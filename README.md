@@ -1,93 +1,159 @@
-# Shield Aegis - Secure AI Agent Platform
+# Shield Aegis — Secure AI Agent Platform
 
 > **The AI agent your security team won't hate.**
 
-Aegis is an open-source, self-hosted AI agent platform built on LangGraph and Anthropic Claude. It delivers the power of autonomous AI agents with enterprise-grade security built in - not bolted on.
+Aegis is an open-source, self-hosted AI agent platform built on LangGraph and Anthropic Claude. It delivers the power of autonomous AI agents with enterprise-grade security built in — not bolted on.
 
 ## Features
 
-- LangGraph Agent powered by Claude claude-sonnet-4-5
-- Live Web Search via DDGS
-- AES-256 Encrypted Memory with per-user keys
-- HashiCorp Vault - zero secrets in env files
-- OPA Policy Engine - pre-execution allowlist
-- Tamper-evident Audit Logging
-- Browser Dashboard - chat, audit, memory
-- Docker Compose - one-command deployment
-- GDPR Ready - right-to-erasure built in
+- LangGraph agent powered by Claude claude-sonnet-4-5
+- Live web search via DDGS
+- AES-256 encrypted memory with per-user keys
+- HashiCorp Vault — zero secrets in env files
+- OPA policy engine — enforced pre-execution on every tool call
+- Tamper-evident audit logging (JSONL)
+- Browser dashboard — chat, audit, memory
+- Docker Compose — one-command deployment
+- GDPR ready — right-to-erasure built in
 
 ## Architecture
 
-Request -> nginx Gateway -> OPA Policy -> LangGraph Agent -> Encrypted Memory -> Vault
+```
+Request → nginx Gateway → FastAPI Agent → OPA Policy Check → LangGraph Tools → Encrypted Memory
+                                                                      ↓
+                                                               Audit Log (JSONL)
+```
 
 ## Quick Start
 
-Prerequisites: Docker Desktop, Python 3.11+, Anthropic API Key
+**Prerequisites:** Docker Desktop, Python 3.11+, Anthropic API key
 
-    git clone https://github.com/Indianinnovation/aegis.git
-    cd aegis
-    cp .env.example .    cp .env.example .    cp .env.example ml
-    pyt    pyt  d/    pyt    pyt  d/    pyt    pyt  d/    
-                                                  er
+```bash
+git clone https://github.com/Indianinnovation/aegis.git
+cd aegis
+
+# Interactive setup — writes .env and agent/config.yaml
+python wizard/setup_wizard.py
+
+# Start all services
+docker compose up -d
+```
 
 - Landing page:  http://localhost
 - Dashboard:     http://localhost/dashboard.html
 - Vault UI:      http://localhost:8200
 
+## Manual Setup (without wizard)
+
+```bash
+cp .env.example .env
+# Edit .env and fill in all values, then:
+docker compose up -d
+```
+
 ## Chat with Your Agent
 
-    curl -X POST http://localhost/chat \
-      -H "Content-Type: application/json" \
-      -d '{"message": "Search the web for latest O-RAN news"}'
+```bash
+curl -X POST http://localhost/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Search the web for latest O-RAN news"}'
+```
 
 ## Security Model
 
 | Threat | Protection |
 |---|---|
-| Prompt injection | OPA blocklist pre-execution |
-| Memory exposure | AES-256 encryption per-user |
-| API key theft | HashiCorp Vault only |
+| Prompt injection | OPA blocklist enforced before every tool call |
+| Memory exposure | AES-256 encryption per-user key (scrypt-derived) |
+| API key theft | HashiCorp Vault — never in env files |
 | Untracked actions | Tamper-evident JSONL audit log |
-| Brute force | JWT auth + rate limiting | Brute force s || Brute force | JWT auth + rate limiting | Brute force s || Brute force | JWT auth |---|| Brute|
-| Setup| Setup| Setup| Setup| Setup| Setup| Setup| Setup| Setup| S
-| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me|s || Me| Me| og | Me| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me|se || Me| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me|ec| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me| Me| Murity.py    - Vault, encryption, audit, policy
-        main.py             - FastAPI + LangGraph agent
-        config.yaml         - Agent configuration
-        requirements.txt
-    nginx/
-                                                   html/dashboard.html - Chat dashboard
-        nginx.conf
-    opa/policy.rego         - Security policies
-    wizard/setup_wizard.py  - Interactive setup
-    docker-compose.yml
-    .env.example
+| Weak encryption key | Hard startup failure if `MEMORY_MASTER_KEY` is missing or default |
+| Hardcoded secrets | All secrets sourced from `.env` — none in `docker-compose.yml` |
+| Abuse / flooding | nginx rate limiting — 10 req/min on `/chat`, 30 req/min on `/api/` |
+
+## Project Structure
+
+```
+aegis/
+├── agent/
+│   ├── core/
+│   │   └── security.py       # Vault, AES-256 memory, audit logger
+│   ├── skills/
+│   │   └── websearch.py      # Web search skill (LangChain tool)
+│   ├── config.yaml           # Agent name, model, timezone, skills
+│   ├── Dockerfile
+│   ├── main.py               # FastAPI + LangGraph agent + OPA enforcement
+│   └── requirements.txt
+├── nginx/
+│   ├── html/
+│   │   ├── index.html
+│   │   └── dashboard.html    # Chat dashboard
+│   └── nginx.conf
+├── opa/
+│   └── policy.rego           # Security policies (tool blocklist)
+├── wizard/
+│   └── setup_wizard.py       # Interactive first-time setup
+├── worker/
+│   └── worker.py             # Background Redis queue worker
+├── docker-compose.yml
+└── .env.example
+```
+
+## Environment Variables
+
+All secrets are required. Copy `.env.example` to `.env` and fill in every value, or run the setup wizard.
+
+| Variable | Description |
+|---|---|
+| `ANTHROPIC_API_KEY` | Your Anthropic API key (`sk-ant-...`) |
+| `VAULT_TOKEN` | HashiCorp Vault dev root token |
+| `REDIS_PASSWORD` | Redis auth password |
+| `MEMORY_MASTER_KEY` | 64-char hex key for AES-256 memory encryption |
+
+Generate a secure memory key:
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
 
 ## Useful Commands
 
-    docker compose logs -f agent     # View agent logs
-    curl http://localhost/audit      # Check audit log
-    curl http://localhost/memories   # View memories
-    curl -X DELETE http://localhost/memories  # Purge memories
-    docker compose restart agent     # Restart agent
-    docker compose down              # Stop everything
+```bash
+docker compose logs -f agent          # View agent logs
+docker compose restart agent          # Restart agent
+
+curl http://localhost/audit           # View audit log
+curl http://localhost/memories        # View memories
+curl -X DELETE http://localhost/memories  # Purge memories (GDPR erasure)
+
+docker compose down                   # Stop everything
+```
 
 ## Tech Stack
 
-- Agent Runtime: LangGraph + Anthropic Claude
-- API Gateway: nginx + FastAPI
-- Policy Engine: Open Policy Agent
-- Secrets: HashiCorp Vault
-- Memory: SQLite + AES-256
-- Search: DDGS
-- Queue: Redis
-- Containers: Docker Compose
+| Component | Technology |
+|---|---|
+| Agent runtime | LangGraph + Anthropic Claude |
+| API | FastAPI + nginx |
+| Policy engine | Open Policy Agent (OPA) |
+| Secrets | HashiCorp Vault |
+| Memory | SQLite + AES-256 (Fernet) |
+| Search | DDGS |
+| Queue | Redis |
+| Containers | Docker Compose |
 
 ## Contributing
 
 1. Fork the repo
-2. Create branch: git checkout -b feature/my-skill
-3. Commit: git commit -m "Add my skill"
-4. Push: git push origin feature/my-skill
-5. Open a Pull Re5. Open a Pull Re5. Open a Pull Re5. Open a Pull Re5. Open a Pull Re5. Opimization / AI Platform Engineer
+2. Create a branch: `git checkout -b feature/my-skill`
+3. Commit: `git commit -m "Add my skill"`
+4. Push: `git push origin feature/my-skill`
+5. Open a Pull Request
+
+## Author
+
+Built by Dilip R Tandekar — AI Platform Engineer
 - GitHub: https://github.com/Indianinnovation
-- L- L- L- L- L- L- L- L- L- L- L- L- L- L- L- L-r-- L- L- L- L- L- L- L AI agent your security team won't hate*
+
+---
+
+*The AI agent your security team won't hate.*

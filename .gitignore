@@ -1,7 +1,8 @@
 # Secrets - NEVER commit
 .env
 certs/
-agent/data/
+agent/data/*
+!agent/data/.gitkeep
 *.db
 *.jsonl
 *.key

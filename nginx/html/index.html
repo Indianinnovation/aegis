@@ -894,7 +894,7 @@
     <div class="marquee-item"><strong>Docker Sandboxed</strong><span class="marquee-sep">◆</span>Every command isolated</div>
     <div class="marquee-item"><strong>OPA Policy Engine</strong><span class="marquee-sep">◆</span>Allowlist before execution</div>
     <div class="marquee-item"><strong>AES-256 Memory</strong><span class="marquee-sep">◆</span>Per-user encryption keys</div>
-    <div class="marquee-item"><strong>JWT Auth</strong><span class="marquee-sep">◆</span>Rate-limited gateway</div>
+    <div class="marquee-item"><strong>Rate Limited</strong><span class="marquee-sep">◆</span>10 req/min on /chat</div>
     <div class="marquee-item"><strong>Full Audit Trail</strong><span class="marquee-sep">◆</span>JSONL · SIEM-ready</div>
     <div class="marquee-item"><strong>GDPR Ready</strong><span class="marquee-sep">◆</span>Right to erasure built-in</div>
     <div class="marquee-item"><strong>3-Minute Setup</strong><span class="marquee-sep">◆</span>Interactive wizard</div>
@@ -902,7 +902,7 @@
     <div class="marquee-item"><strong>Docker Sandboxed</strong><span class="marquee-sep">◆</span>Every command isolated</div>
     <div class="marquee-item"><strong>OPA Policy Engine</strong><span class="marquee-sep">◆</span>Allowlist before execution</div>
     <div class="marquee-item"><strong>AES-256 Memory</strong><span class="marquee-sep">◆</span>Per-user encryption keys</div>
-    <div class="marquee-item"><strong>JWT Auth</strong><span class="marquee-sep">◆</span>Rate-limited gateway</div>
+    <div class="marquee-item"><strong>Rate Limited</strong><span class="marquee-sep">◆</span>10 req/min on /chat</div>
     <div class="marquee-item"><strong>Full Audit Trail</strong><span class="marquee-sep">◆</span>JSONL · SIEM-ready</div>
     <div class="marquee-item"><strong>GDPR Ready</strong><span class="marquee-sep">◆</span>Right to erasure built-in</div>
     <div class="marquee-item"><strong>3-Minute Setup</strong><span class="marquee-sep">◆</span>Interactive wizard</div>
@@ -1029,7 +1029,7 @@
   <div class="arch-diagram">
     <div class="arch-layer">
       <div class="arch-badge" style="background:rgba(0,153,255,.08);color:#0099ff;border-right:1px solid var(--wire)">Gateway</div>
-      <div class="arch-content"><strong>mTLS + JWT Auth + Rate Limiting</strong> — All channel traffic authenticated. 30 req/min per user. Nginx reverse proxy with TLS termination.</div>
+      <div class="arch-content"><strong>nginx Rate Limiting</strong> — 10 req/min on /chat, 30 req/min on /api/. Reverse proxy with TLS-ready certs/ volume.</div>
     </div>
     <div class="arch-arrow">↓</div>
     <div class="arch-layer">

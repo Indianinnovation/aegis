@@ -1,4 +1,4 @@
-import os, uuid, json, yaml
+import os, uuid, json, yaml, httpx
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,11 +9,12 @@ from langgraph.graph.message import add_messages
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import ToolNode
 from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import SystemMessage, HumanMessage, BaseMessage
+from langchain_core.messages import SystemMessage, HumanMessage, BaseMessage, ToolMessage
 from langchain_core.tools import tool
 from core.security import secrets, memory_store, audit
 
 cfg = yaml.safe_load(Path("/app/config.yaml").read_text())
+OPA_URL = os.getenv("OPA_URL", "http://opa:8181")
 
 app = FastAPI(title="Aegis Agent API")
 app.add_middleware(CORSMiddleware,
@@ -93,18 +94,55 @@ Memory context:
     response = llm_with_tools.invoke([SystemMessage(content=system)] + state["messages"])
     return {"messages": [response]}
 
+def opa_node(state: AgentState):
+    """Check every pending tool call against OPA before execution."""
+    last = state["messages"][-1]
+    if not (hasattr(last, "tool_calls") and last.tool_calls):
+        return {}
+
+    denials = []
+    for tc in last.tool_calls:
+        payload = {"input": {"tool": tc["name"], "args": tc.get("args", {})}}
+        try:
+            resp = httpx.post(
+                f"{OPA_URL}/v1/data/aegis/authz",
+                json=payload, timeout=3.0
+            )
+            result = resp.json().get("result", {})
+            deny_reasons = result.get("deny", [])
+        except Exception as e:
+            deny_reasons = [f"OPA unreachable: {e}"]
+
+        if deny_reasons:
+            reason = "; ".join(deny_reasons)
+            audit.log(state["user_id"], tc["name"], "denied", reason, "blocked", "opa", state["session_id"])
+            denials.append(ToolMessage(
+                content=f"Blocked by policy: {reason}",
+                tool_call_id=tc["id"],
+            ))
+
+    if denials:
+        # Strip the tool_calls from the AI message so the graph doesn't re-execute them,
+        # then return the denial messages so the agent can explain to the user.
+        clean_last = last.model_copy(update={"tool_calls": []})
+        return {"messages": [clean_last] + denials}
+    return {}
+
+
 def should_continue(state: AgentState):
     last = state["messages"][-1]
     if hasattr(last, "tool_calls") and last.tool_calls:
-        return "tools"
+        return "opa"
     return END
 
 checkpointer = MemorySaver()
 graph = StateGraph(AgentState)
 graph.add_node("agent", agent_node)
+graph.add_node("opa", opa_node)
 graph.add_node("tools", ToolNode(tools))
 graph.set_entry_point("agent")
-graph.add_conditional_edges("agent", should_continue)
+graph.add_conditional_edges("agent", should_continue, {"opa": "opa", END: END})
+graph.add_edge("opa", "tools")
 graph.add_edge("tools", "agent")
 compiled = graph.compile(checkpointer=checkpointer)
 

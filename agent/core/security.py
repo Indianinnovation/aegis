@@ -1,7 +1,9 @@
-import os, hashlib, json, sqlite3, base64
+import os, sys, hashlib, json, sqlite3, base64
 from datetime import datetime, timezone
 from pathlib import Path
 from cryptography.fernet import Fernet
+
+_INSECURE_DEFAULT = "aegis-default-dev-key-change-in-prod"
 
 
 class SecretsManager:
@@ -35,9 +37,16 @@ class EncryptedMemory:
     def __init__(self, db_path: str = "/app/data/memory.db"):
         self.db_path = db_path
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
-        self.master = os.getenv(
-            "MEMORY_MASTER_KEY", "aegis-default-dev-key-change-in-prod"
-        ).encode()
+        key = os.getenv("MEMORY_MASTER_KEY", "")
+        if not key or key == _INSECURE_DEFAULT or key.startswith("change-me"):
+            msg = (
+                "FATAL: MEMORY_MASTER_KEY is not set or is insecure.\n"
+                "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\"\n"
+                "Then set it in your .env file."
+            )
+            print(msg, file=sys.stderr)
+            sys.exit(1)
+        self.master = key.encode()
         self._init_db()
 
     def _init_db(self):
