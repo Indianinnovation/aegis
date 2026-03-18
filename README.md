@@ -32,11 +32,8 @@ Request → nginx Gateway → FastAPI Agent → OPA Policy Check → LangGraph T
 git clone https://github.com/Indianinnovation/aegis.git
 cd aegis
 
-# Interactive setup — writes .env and agent/config.yaml
-python wizard/setup_wizard.py
-
-# Start all services
-docker compose up -d
+make setup   # interactive setup — writes .env and agent/config.yaml
+make up      # build and start all services
 ```
 
 - Landing page:  http://localhost
@@ -48,7 +45,7 @@ docker compose up -d
 ```bash
 cp .env.example .env
 # Edit .env and fill in all values, then:
-docker compose up -d
+make up
 ```
 
 ## Chat with Your Agent
@@ -118,14 +115,23 @@ python -c "import secrets; print(secrets.token_hex(32))"
 ## Useful Commands
 
 ```bash
-docker compose logs -f agent          # View agent logs
-docker compose restart agent          # Restart agent
+make help                 # Show all available commands
 
-curl http://localhost/audit           # View audit log
-curl http://localhost/memories        # View memories
-curl -X DELETE http://localhost/memories  # Purge memories (GDPR erasure)
+make logs                 # Tail all service logs
+make logs-agent           # Tail agent logs only
+make health               # Check agent health
+make ps                   # Show container status
 
-docker compose down                   # Stop everything
+make chat                 # Send a test message
+make audit                # View last 20 audit entries
+make memories             # View stored memories
+make purge                # Purge all memories (GDPR erasure)
+
+make rebuild              # Force rebuild agent image
+make restart              # Restart all services
+make shell                # Shell into agent container
+make down                 # Stop everything
+make clean                # Stop + remove volumes and images
 ```
 
 ## Tech Stack
