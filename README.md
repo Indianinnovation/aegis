@@ -15,6 +15,7 @@ Aegis is an open-source, self-hosted AI agent platform built on LangGraph and An
 - Browser dashboard — chat, audit, memory
 - Docker Compose — one-command deployment
 - GDPR ready — right-to-erasure built in
+![Aegis-preview](https://github.com/user-attachments/assets/1446c685-1aaa-4204-98d6-bdc99e211d5d)
 
 ## Architecture
 
