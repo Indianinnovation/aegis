@@ -25,6 +25,9 @@ Request → nginx Gateway → FastAPI Agent → OPA Policy Check → LangGraph T
                                                                Audit Log (JSONL)
 ```
 
+<img width="1410" height="1078" alt="image" src="https://github.com/user-attachments/assets/e66705ba-f6e0-40f3-8451-6d2ac2dc7ba0" />
+
+
 ## Quick Start
 
 **Prerequisites:** Docker Desktop, Python 3.11+, Anthropic API key
